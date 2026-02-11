@@ -1,0 +1,20 @@
+{
+  "name": "ctest",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "test:shared": "pnpm --filter @ctest/shared run test",
+    "test:api": "pnpm --filter @ctest/api run test",
+    "test:front": "pnpm --filter @ctest/front run test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "@nestjs/core",
+      "unrs-resolver"
+    ]
+  }
+}
