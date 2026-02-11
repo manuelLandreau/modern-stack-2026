@@ -1,0 +1,112 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run shared tests
+        run: pnpm test:shared
+
+      - name: Run API tests
+        run: pnpm test:api
+
+      - name: Run frontend tests
+        run: pnpm test:front
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t ctest-api ./apps/api
+
+      - name: Build Frontend image
+        run: docker build -t ctest-front ./apps/front
+
+  # ============================================================
+  # DEPLOYMENT — Uncomment and configure when a server is ready
+  # ============================================================
+  #
+  # deploy:
+  #   name: Deploy
+  #   runs-on: ubuntu-latest
+  #   needs: docker
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     # Option A: Deploy to a VPS via SSH
+  #     # - name: Deploy via SSH
+  #     #   uses: appleboy/ssh-action@v1
+  #     #   with:
+  #     #     host: ${{ secrets.DEPLOY_HOST }}
+  #     #     username: ${{ secrets.DEPLOY_USER }}
+  #     #     key: ${{ secrets.DEPLOY_SSH_KEY }}
+  #     #     script: |
+  #     #       cd /opt/ctest
+  #     #       git pull origin main
+  #     #       docker compose up --build -d
+  #
+  #     # Option B: Push images to a container registry
+  #     # - name: Log in to Container Registry
+  #     #   uses: docker/login-action@v3
+  #     #   with:
+  #     #     registry: ghcr.io
+  #     #     username: ${{ github.actor }}
+  #     #     password: ${{ secrets.GITHUB_TOKEN }}
+  #     #
+  #     # - name: Push API image
+  #     #   run: |
+  #     #     docker tag ctest-api ghcr.io/${{ github.repository }}/api:latest
+  #     #     docker push ghcr.io/${{ github.repository }}/api:latest
+  #     #
+  #     # - name: Push Frontend image
+  #     #   run: |
+  #     #     docker tag ctest-front ghcr.io/${{ github.repository }}/front:latest
+  #     #     docker push ghcr.io/${{ github.repository }}/front:latest

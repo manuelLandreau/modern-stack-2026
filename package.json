@@ -14,7 +14,8 @@
       "better-sqlite3",
       "esbuild",
       "@nestjs/core",
-      "unrs-resolver"
+      "unrs-resolver",
+      "@swc/core"
     ]
   }
 }
